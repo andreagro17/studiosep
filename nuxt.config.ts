@@ -10,6 +10,10 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
   ],
 
+  // Auto-import por nombre de archivo, sin prefijar con la carpeta
+  // (p. ej. components/editorial/HeroSection.vue → <HeroSection>)
+  components: [{ path: '~/components', pathPrefix: false }],
+
   css: ['~/assets/css/main.css'],
 
   app: {
@@ -37,6 +41,9 @@ export default defineNuxtConfig({
     },
     display: 'swap',
     preconnect: true,
+    // La red corporativa bloquea la descarga en build; cargamos por <link>
+    // y, si también se bloquea, cae al stack de respaldo de Tailwind.
+    download: false,
   },
 
   // Render híbrido: editorial estático/ISR, panel siempre SSR sin cache

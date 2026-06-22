@@ -12,8 +12,9 @@ export type ProductionStatus =
   | 'aceptado'
   | 'modelando'
   | 'secando'
-  | 'horno'
+  | 'primera_coccion'
   | 'esmaltado'
+  | 'segunda_coccion'
   | 'preparando_envio'
   | 'enviado'
   | 'entregado'
@@ -24,8 +25,9 @@ export const PRODUCTION_STEPS: { value: ProductionStatus; label: string }[] = [
   { value: 'aceptado', label: 'Aceptado' },
   { value: 'modelando', label: 'Modelando' },
   { value: 'secando', label: 'Secando' },
-  { value: 'horno', label: 'Horno' },
+  { value: 'primera_coccion', label: 'Primera cocción' },
   { value: 'esmaltado', label: 'Esmaltado' },
+  { value: 'segunda_coccion', label: 'Segunda cocción' },
   { value: 'preparando_envio', label: 'Preparando envío' },
   { value: 'enviado', label: 'Enviado' },
   { value: 'entregado', label: 'Entregado' },
@@ -39,6 +41,19 @@ export interface ProductImage {
 export interface ProductDimension {
   label: string // p. ej. "Altura", "Ø"
   valueCm: number
+}
+
+/** Variante de una pieza (color, tamaño, acabado…) */
+export interface ProductVariant {
+  id: string
+  /** Tipo de variante */
+  type: 'color' | 'tamaño' | 'acabado'
+  /** Etiqueta visible, p. ej. "Arena", "Grande" */
+  label: string
+  /** Diferencia de precio respecto al precio base, en céntimos */
+  priceDeltaCents?: number
+  /** Unidades disponibles (solo relevante en in_stock) */
+  stockQuantity?: number
 }
 
 export interface Product {
@@ -56,6 +71,8 @@ export interface Product {
   images: ProductImage[]
   dimensions: ProductDimension[]
   materials: string[]
+  /** Variantes disponibles (color, tamaño, acabado). Vacío si no aplica */
+  variants?: ProductVariant[]
   collectionId?: string
   isFeatured?: boolean
   isPublished: boolean
