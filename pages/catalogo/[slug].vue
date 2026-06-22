@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { getProductBySlug } from '~/lib/data'
 import { formatPrice, productionTimeLabel } from '~/lib/format'
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
-const product = computed(() => getProductBySlug(slug.value))
+const { data: product } = await useProduct(slug)
 
 if (!product.value) {
   throw createError({ statusCode: 404, statusMessage: 'Pieza no encontrada', fatal: true })

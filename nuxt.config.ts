@@ -8,7 +8,19 @@ export default defineNuxtConfig({
     '@nuxtjs/google-fonts',
     '@nuxt/image',
     '@pinia/nuxt',
+    '@nuxtjs/supabase',
   ],
+
+  // Supabase: protege SOLO el panel privado; el resto del sitio es público.
+  supabase: {
+    redirectOptions: {
+      login: '/panel/login',
+      callback: '/panel/confirm',
+      include: ['/panel(/*)?'],
+      exclude: ['/panel/login', '/panel/confirm'],
+      cookieRedirect: false,
+    },
+  },
 
   // Auto-import por nombre de archivo, sin prefijar con la carpeta
   // (p. ej. components/editorial/HeroSection.vue → <HeroSection>)
