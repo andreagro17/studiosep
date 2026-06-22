@@ -58,10 +58,12 @@ export default defineNuxtConfig({
     download: false,
   },
 
-  // Render híbrido: editorial estático/ISR, panel siempre SSR sin cache
+  // Render híbrido. No usamos prerender en build porque el plugin de servidor
+  // de @nuxtjs/supabase necesita contexto de petición (incompatible con la
+  // pre-generación). En su lugar, SSR cacheado (SWR) en tiempo de ejecución.
   routeRules: {
-    '/': { prerender: true },
-    '/sobre-nosotras': { prerender: true },
+    '/': { swr: 3600 },
+    '/sobre-nosotras': { swr: 3600 },
     '/contacto': { swr: 3600 },
     '/catalogo': { swr: 600 },
     '/catalogo/**': { swr: 600 },
