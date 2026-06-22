@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { collections } from '~/lib/data'
-
 useHead({ title: 'Colecciones — StudioSeptiembre' })
 
-// Solo colecciones publicadas y con stock (se ocultan al agotarse)
-const visible = computed(() =>
-  collections.filter((c) => c.isPublished && c.productCount > 0),
-)
+// El composable ya devuelve solo colecciones publicadas y con piezas.
+const { data: collections, pending } = useCollections()
+const visible = computed(() => collections.value ?? [])
 </script>
 
 <template>
@@ -47,7 +44,8 @@ const visible = computed(() =>
       </NuxtLink>
     </div>
 
-    <p v-if="!visible.length" class="mt-12 text-engobe">
+    <p v-if="pending" class="mt-12 text-engobe">Cargando colecciones…</p>
+    <p v-else-if="!visible.length" class="mt-12 text-engobe">
       No hay colecciones disponibles ahora mismo. Vuelve pronto.
     </p>
   </div>

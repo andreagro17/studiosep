@@ -7,6 +7,15 @@ const nav = [
   { label: 'Colecciones', to: '/panel/colecciones' },
   { label: 'Ajustes', to: '/panel/ajustes' },
 ]
+
+const supabase = useSupabaseClient()
+const user = useSupabaseUser()
+const router = useRouter()
+
+async function logout() {
+  await supabase.auth.signOut()
+  router.replace('/panel/login')
+}
 </script>
 
 <template>
@@ -33,9 +42,21 @@ const nav = [
     <div class="flex flex-1 flex-col">
       <header class="flex items-center justify-between border-b border-ink/10 px-6 py-4">
         <span class="text-sm text-engobe">Estudio · Madrid</span>
-        <NuxtLink to="/" class="text-sm text-engobe transition-colors hover:text-ink">
-          Ver web pública →
-        </NuxtLink>
+        <div class="flex items-center gap-5">
+          <span v-if="user?.email" class="hidden text-sm text-engobe sm:inline">
+            {{ user.email }}
+          </span>
+          <NuxtLink to="/" class="text-sm text-engobe transition-colors hover:text-ink">
+            Ver web pública →
+          </NuxtLink>
+          <button
+            type="button"
+            class="text-sm text-engobe transition-colors hover:text-ink"
+            @click="logout"
+          >
+            Cerrar sesión
+          </button>
+        </div>
       </header>
       <main class="flex-1 px-6 py-8">
         <slot />

@@ -1,25 +1,24 @@
 <script setup lang="ts">
-import { products, getProductBySlug } from '~/lib/data'
-
 useHead({ title: 'Solicitar un pedido — StudioSeptiembre' })
 
 const route = useRoute()
 const router = useRouter()
 
-const preselected = computed(() => {
-  const slug = route.query.pieza ? String(route.query.pieza) : ''
-  return getProductBySlug(slug)
-})
+const { data: products } = useProducts()
+
+const preselectedSlug = route.query.pieza ? String(route.query.pieza) : ''
 
 const form = reactive({
-  productSlug: preselected.value?.slug ?? '',
+  productSlug: preselectedSlug,
   variant: '',
   name: '',
   email: '',
   notes: '',
 })
 
-const selectedProduct = computed(() => getProductBySlug(form.productSlug))
+const selectedProduct = computed(() =>
+  (products.value ?? []).find((p) => p.slug === form.productSlug),
+)
 
 function submit() {
   // TODO: enviar a /api/pedidos (Supabase) más adelante.
@@ -50,7 +49,7 @@ function submit() {
             class="mt-2 w-full border-b border-ink/20 bg-transparent py-2 text-ink outline-none transition-colors focus:border-ink"
           >
             <option value="" disabled>Elige una pieza</option>
-            <option v-for="p in products" :key="p.id" :value="p.slug">{{ p.name }}</option>
+            <option v-for="p in (products ?? [])" :key="p.id" :value="p.slug">{{ p.name }}</option>
           </select>
         </div>
 

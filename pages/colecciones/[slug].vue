@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import { getCollectionBySlug, products } from '~/lib/data'
-
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
-const collection = computed(() => getCollectionBySlug(slug.value))
+const { data } = await useCollection(slug)
 
-if (!collection.value) {
+if (!data.value) {
   throw createError({ statusCode: 404, statusMessage: 'Colección no encontrada', fatal: true })
 }
 
-useHead(() => ({ title: `${collection.value?.title} — StudioSeptiembre` }))
+const collection = computed(() => data.value!.collection)
+const pieces = computed(() => data.value!.pieces)
 
-const pieces = computed(() =>
-  products.filter((p) => p.isPublished && p.collectionId === collection.value?.id),
-)
+useHead(() => ({ title: `${collection.value.title} — StudioSeptiembre` }))
 </script>
 
 <template>

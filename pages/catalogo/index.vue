@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { products } from '~/lib/data'
 import type { AvailabilityType } from '~/types'
 
 useHead({ title: 'Catálogo — StudioSeptiembre' })
+
+const { data: products, pending } = useProducts()
 
 type Filter = 'all' | AvailabilityType
 const filter = ref<Filter>('all')
@@ -14,8 +15,8 @@ const tabs: { value: Filter; label: string }[] = [
 ]
 
 const visible = computed(() =>
-  products.filter(
-    (p) => p.isPublished && (filter.value === 'all' || p.availabilityType === filter.value),
+  (products.value ?? []).filter(
+    (p) => filter.value === 'all' || p.availabilityType === filter.value,
   ),
 )
 </script>
@@ -51,7 +52,8 @@ const visible = computed(() =>
       <ProductCard v-for="product in visible" :key="product.id" :product="product" />
     </div>
 
-    <p v-if="!visible.length" class="mt-12 text-engobe">
+    <p v-if="pending" class="mt-12 text-engobe">Cargando piezas…</p>
+    <p v-else-if="!visible.length" class="mt-12 text-engobe">
       No hay piezas en esta categoría por ahora.
     </p>
   </div>
