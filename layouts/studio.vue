@@ -2,6 +2,7 @@
 const nav = [
   { label: 'Resumen', to: '/panel' },
   { label: 'Pedidos', to: '/panel/pedidos' },
+  { label: 'Consultas', to: '/panel/consultas' },
   { label: 'Clientes', to: '/panel/clientes' },
   { label: 'Productos', to: '/panel/productos' },
   { label: 'Colecciones', to: '/panel/colecciones' },
