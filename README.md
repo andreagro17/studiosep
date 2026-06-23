@@ -232,15 +232,55 @@ pendiente → aceptado → modelando → secando → primera_coccion
 
 ## Gestión de contenido (fotos y datos de producto)
 
-Actualmente el contenido es **mock** y vive en [`lib/data.ts`](./lib/data.ts); las imágenes
-son de `picsum.photos`. Para cargar material real **antes de tener el panel**:
+Todo el contenido vive en **Supabase**, que tiene dos partes:
 
-1. Coloca las fotos en `public/images/` → se referencian como `/images/mi-foto.jpg`.
-2. Edita los objetos de `lib/data.ts` (nombre, descripción, `priceCents`, dimensiones,
-   materiales, variantes…).
+1. **Base de datos** (Postgres): tablas `products`, `collections`, `product_images`,
+   `product_variants`, `product_dimensions`… → los datos (nombre, precio, descripción,
+   stock, disponibilidad…).
+2. **Storage** (bucket `products`): los **archivos de las fotos**.
 
-La forma definitiva será el **panel privado + Supabase**, donde el contenido se gestiona
-desde una interfaz sin tocar código (ver _Roadmap_).
+### Flujo: del panel a la web del cliente
+
+```
+Admin (las ceramistas)  →  Supabase  →  Web pública (clientes)
+                           ├ Tablas (Postgres)
+                           └ Storage (bucket "products")
+```
+
+La web pública **no muestra todo**: solo lee las filas marcadas como **publicadas**. Esto lo
+resuelve la capa de consulta en [`composables/useCatalog.ts`](./composables/useCatalog.ts):
+
+- `is_published = true` → visible para clientes.
+- `is_published = false` → borrador, invisible en la web.
+
+Así se puede preparar una pieza en borrador y publicarla cuando se quiera.
+
+### Cómo funcionan las fotos
+
+La columna `product_images.storage_path` admite **dos formatos** y `resolveImageUrl()` (en
+`useCatalog.ts`) los distingue automáticamente:
+
+- **URL completa** (`https://…`) → se usa tal cual. Es lo que hace [`seed.sql`](./supabase/seed.sql)
+  con los placeholders de `picsum.photos`.
+- **Ruta dentro del bucket** (p. ej. `jarron-alba/01.jpg`) → se convierte en URL pública del
+  bucket `products`. Es lo que se guardará al subir **fotos reales**.
+
+Por eso conviven datos de demo y fotos reales sin tocar código.
+
+### Estado actual del panel (importante)
+
+Las páginas del panel (`pages/panel/*`) son de **solo lectura**: listan productos,
+colecciones, pedidos y clientes, pero **todavía no incluyen formularios de alta/edición ni
+subida de fotos**. Hasta construir esos formularios hay dos vías para cargar contenido:
+
+| Vía | ¿Disponible ya? | Comodidad |
+|---|---|---|
+| **Dashboard de Supabase** (Table Editor + Storage) | ✅ Sí | Técnica, poco amigable |
+| **Panel propio con formularios + subida de fotos** | ❌ Pendiente | Lo ideal para el equipo |
+
+Para que el panel sea plenamente usable falta añadir (ver _Roadmap_): formularios de
+alta/edición de producto y colección, **subida de imágenes** al bucket con
+`supabase.storage.from('products').upload(...)`, y botones de **publicar/despublicar/eliminar**.
 
 ---
 
