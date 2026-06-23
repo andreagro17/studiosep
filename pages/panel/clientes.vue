@@ -19,7 +19,7 @@ const { data: customers, pending, error } = await useAsyncData('panel-customers'
     .order('created_at', { ascending: false })
   if (err) throw err
   return (data ?? []) as CustomerRow[]
-})
+}, { getCachedData: () => undefined })
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
