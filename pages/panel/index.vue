@@ -32,7 +32,7 @@ const { data, pending, error } = await useAsyncData('panel-overview', async () =
     ordersCount: ordersCount.count ?? 0,
     inquiriesCount: inquiriesCount.count ?? 0,
   }
-})
+}, { getCachedData: () => undefined })
 
 // Pedidos en curso = todos los que no están entregados.
 const activeOrders = computed(

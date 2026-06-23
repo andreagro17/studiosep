@@ -27,7 +27,7 @@ const { data: orders, pending, error } = await useAsyncData('panel-orders', asyn
     .order('requested_at', { ascending: false })
   if (err) throw err
   return (data ?? []) as unknown as OrderRow[]
-})
+}, { getCachedData: () => undefined })
 
 const statusLabel = (s: ProductionStatus) =>
   PRODUCTION_STEPS.find((x) => x.value === s)?.label ?? s

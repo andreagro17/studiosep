@@ -25,7 +25,7 @@ const { data: products, pending, error } = await useAsyncData('panel-products', 
     .order('created_at', { ascending: false })
   if (err) throw err
   return (data ?? []) as ProductRow[]
-})
+}, { getCachedData: () => undefined })
 
 const availabilityLabel = (a: AvailabilityType) =>
   a === 'made_to_order' ? 'Bajo pedido' : 'En stock'

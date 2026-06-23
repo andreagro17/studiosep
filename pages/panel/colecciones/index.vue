@@ -26,7 +26,7 @@ const { data, pending, error } = await useAsyncData('panel-collections', async (
   }
 
   return (cols.data as CollectionRow[]).map((c) => ({ ...c, productCount: counts.get(c.id) ?? 0 }))
-})
+}, { getCachedData: () => undefined })
 
 const formatMonth = (iso: string | null) =>
   iso
@@ -36,9 +36,17 @@ const formatMonth = (iso: string | null) =>
 
 <template>
   <div>
-    <header class="mb-8">
-      <p class="eyebrow">Catálogo</p>
-      <h1 class="mt-1 font-serif text-3xl tracking-tight text-ink">Colecciones</h1>
+    <header class="mb-8 flex items-end justify-between gap-4">
+      <div>
+        <p class="eyebrow">Catálogo</p>
+        <h1 class="mt-1 font-serif text-3xl tracking-tight text-ink">Colecciones</h1>
+      </div>
+      <NuxtLink
+        to="/panel/colecciones/nuevo"
+        class="rounded-md bg-ink px-4 py-2 text-sm text-bone transition-colors hover:bg-accent"
+      >
+        Nueva colección
+      </NuxtLink>
     </header>
 
     <p v-if="error" class="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -60,13 +68,17 @@ const formatMonth = (iso: string | null) =>
             <td colspan="4" class="px-5 py-8 text-center text-engobe">Cargando…</td>
           </tr>
           <tr v-else-if="!data?.length">
-            <td colspan="4" class="px-5 py-8 text-center text-engobe">Aún no hay colecciones.</td>
+            <td colspan="4" class="px-5 py-8 text-center text-engobe">
+              Aún no hay colecciones.
+              <NuxtLink to="/panel/colecciones/nuevo" class="text-accent underline">Crea la primera</NuxtLink>.
+            </td>
           </tr>
           <tr
             v-for="c in data"
             v-else
             :key="c.id"
-            class="border-b border-ink/5 last:border-0 transition-colors hover:bg-stone/20"
+            class="cursor-pointer border-b border-ink/5 last:border-0 transition-colors hover:bg-stone/20"
+            @click="navigateTo(`/panel/colecciones/${c.id}`)"
           >
             <td class="px-5 py-3 font-medium text-ink capitalize">{{ c.title }}</td>
             <td class="px-5 py-3 text-engobe capitalize">{{ formatMonth(c.month) }}</td>
