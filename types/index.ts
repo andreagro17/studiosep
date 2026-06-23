@@ -4,33 +4,25 @@
 export type AvailabilityType = 'made_to_order' | 'in_stock'
 
 /**
- * Estados de producción artesanal de un pedido.
- * Reflejan el proceso real del taller, de principio a fin.
+ * Estados de un pedido, de principio a fin.
+ * Flujo simple del taller; `cancelado` es un estado final aparte.
  */
 export type ProductionStatus =
   | 'pendiente'
   | 'aceptado'
-  | 'modelando'
-  | 'secando'
-  | 'primera_coccion'
-  | 'esmaltado'
-  | 'segunda_coccion'
-  | 'preparando_envio'
+  | 'en_produccion'
   | 'enviado'
   | 'entregado'
+  | 'cancelado'
 
-/** Orden y etiqueta legible de cada estado de producción */
+/** Orden y etiqueta legible de cada estado */
 export const PRODUCTION_STEPS: { value: ProductionStatus; label: string }[] = [
   { value: 'pendiente', label: 'Pendiente' },
   { value: 'aceptado', label: 'Aceptado' },
-  { value: 'modelando', label: 'Modelando' },
-  { value: 'secando', label: 'Secando' },
-  { value: 'primera_coccion', label: 'Primera cocción' },
-  { value: 'esmaltado', label: 'Esmaltado' },
-  { value: 'segunda_coccion', label: 'Segunda cocción' },
-  { value: 'preparando_envio', label: 'Preparando envío' },
+  { value: 'en_produccion', label: 'En producción' },
   { value: 'enviado', label: 'Enviado' },
   { value: 'entregado', label: 'Entregado' },
+  { value: 'cancelado', label: 'Cancelado' },
 ]
 
 export interface ProductImage {

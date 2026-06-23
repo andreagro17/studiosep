@@ -11,6 +11,12 @@ const nav = [
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 const router = useRouter()
+const route = useRoute()
+
+const mobileOpen = ref(false)
+
+// Cerrar el menú móvil al cambiar de página
+watch(() => route.fullPath, () => (mobileOpen.value = false))
 
 async function logout() {
   await supabase.auth.signOut()
@@ -40,13 +46,29 @@ async function logout() {
     </aside>
 
     <div class="flex flex-1 flex-col">
-      <header class="flex items-center justify-between border-b border-ink/10 px-6 py-4">
-        <span class="text-sm text-engobe">Estudio · Madrid</span>
-        <div class="flex items-center gap-5">
-          <span v-if="user?.email" class="hidden text-sm text-engobe sm:inline">
+      <header class="flex items-center justify-between gap-3 border-b border-ink/10 px-4 py-4 sm:px-6">
+        <div class="flex items-center gap-3">
+          <button
+            type="button"
+            class="-ml-1 rounded-md p-1.5 text-ink transition-colors hover:bg-stone/40 md:hidden"
+            :aria-expanded="mobileOpen"
+            aria-label="Abrir menú"
+            @click="mobileOpen = !mobileOpen"
+          >
+            <svg v-if="!mobileOpen" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+            <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+          <span class="text-sm text-engobe">Estudio · Madrid</span>
+        </div>
+        <div class="flex items-center gap-3 sm:gap-5">
+          <span v-if="user?.email" class="hidden text-sm text-engobe lg:inline">
             {{ user.email }}
           </span>
-          <NuxtLink to="/" class="text-sm text-engobe transition-colors hover:text-ink">
+          <NuxtLink to="/" class="hidden text-sm text-engobe transition-colors hover:text-ink sm:inline">
             Ver web pública →
           </NuxtLink>
           <button
@@ -58,7 +80,27 @@ async function logout() {
           </button>
         </div>
       </header>
-      <main class="flex-1 px-6 py-8">
+
+      <!-- Navegación móvil -->
+      <nav
+        v-show="mobileOpen"
+        class="border-b border-ink/10 bg-bone px-4 py-3 md:hidden"
+      >
+        <NuxtLink
+          v-for="item in nav"
+          :key="item.to"
+          :to="item.to"
+          class="block rounded-md px-3 py-2 text-sm text-engobe transition-colors hover:bg-stone/40 hover:text-ink"
+          active-class="bg-stone/50 text-ink"
+        >
+          {{ item.label }}
+        </NuxtLink>
+        <NuxtLink to="/" class="mt-1 block rounded-md px-3 py-2 text-sm text-engobe hover:text-ink sm:hidden">
+          Ver web pública →
+        </NuxtLink>
+      </nav>
+
+      <main class="flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <slot />
       </main>
     </div>

@@ -50,8 +50,8 @@ const availabilityLabel = (a: AvailabilityType) =>
       No se pudieron cargar los productos.
     </p>
 
-    <div v-else class="overflow-hidden rounded-lg border border-ink/10 bg-white">
-      <table class="w-full text-left text-sm">
+    <div v-else class="overflow-x-auto rounded-lg border border-ink/10 bg-white">
+      <table class="w-full min-w-[640px] text-left text-sm">
         <thead class="border-b border-ink/10 text-xs uppercase tracking-widest2 text-engobe">
           <tr>
             <th class="px-5 py-3 font-medium">Pieza</th>
