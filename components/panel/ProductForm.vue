@@ -173,7 +173,7 @@ async function onSetPrimary(img: AdminImage) {
 
 <template>
   <div>
-    <header class="mb-8 flex items-end justify-between gap-4">
+    <header class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <NuxtLink to="/panel/productos" class="text-xs text-engobe hover:text-ink">← Productos</NuxtLink>
         <h1 class="mt-1 font-serif text-3xl tracking-tight text-ink">
