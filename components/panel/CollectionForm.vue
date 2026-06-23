@@ -12,6 +12,8 @@ const {
   publicUrl,
 } = useCollectionAdmin()
 
+const supabase = useSupabaseClient()
+
 const isEditing = computed(() => props.collectionId !== null)
 
 const form = reactive<AdminCollectionForm>(emptyCollectionForm())
@@ -21,6 +23,34 @@ const saving = ref(false)
 const uploading = ref(false)
 const errorMsg = ref('')
 const okMsg = ref('')
+
+// Number of published products assigned to this collection. A collection only
+// shows on the public site if it is published AND has at least one of these.
+const publishedProductCount = ref(0)
+
+// Requirements the collection must meet to be visible to customers.
+const requirements = computed(() => [
+  {
+    met: form.is_published,
+    label: 'Marcar la colección como «Publicada».',
+  },
+  {
+    met: publishedProductCount.value > 0,
+    label: 'Asignar al menos un producto publicado a esta colección.',
+  },
+])
+
+const isPublicVisible = computed(() => requirements.value.every((r) => r.met))
+
+async function refreshProductCount() {
+  if (!props.collectionId) return
+  const { count } = await supabase
+    .from('products')
+    .select('id', { count: 'exact', head: true })
+    .eq('collection_id', props.collectionId)
+    .eq('is_published', true)
+  publishedProductCount.value = count ?? 0
+}
 
 const coverUrl = computed(() => publicUrl(form.cover_image))
 
@@ -46,6 +76,7 @@ onMounted(async () => {
     if (props.collectionId) {
       Object.assign(form, await fetchCollection(props.collectionId))
       slugTouched.value = true
+      await refreshProductCount()
     }
   } catch (e) {
     errorMsg.value = errMessage(e)
@@ -242,9 +273,30 @@ async function onRemoveCover() {
             <span class="text-sm text-ink">Publicada</span>
             <input v-model="form.is_published" type="checkbox" class="h-4 w-4 accent-ink" />
           </label>
-          <p class="text-xs leading-relaxed text-engobe">
-            Solo las colecciones publicadas aparecen en la web pública.
-          </p>
+
+          <!-- Estado de visibilidad en la web pública -->
+          <div
+            class="rounded-md px-3 py-3 text-xs"
+            :class="isPublicVisible ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-800'"
+          >
+            <p class="font-medium">
+              {{ isPublicVisible ? 'Visible en la web pública.' : 'Aún no es visible para los clientes.' }}
+            </p>
+            <p v-if="!isEditing" class="mt-1 leading-relaxed">
+              Guarda la colección para comprobar los requisitos.
+            </p>
+            <ul v-else class="mt-2 space-y-1">
+              <li v-for="(req, i) in requirements" :key="i" class="flex items-start gap-2">
+                <span :class="req.met ? 'text-green-600' : 'text-amber-600'">{{ req.met ? '✓' : '○' }}</span>
+                <span>{{ req.label }}</span>
+              </li>
+            </ul>
+            <p v-if="isEditing && publishedProductCount === 0" class="mt-2 leading-relaxed">
+              Asigna productos a esta colección desde
+              <NuxtLink to="/panel/productos" class="underline">Productos</NuxtLink>
+              (campo «Colección» en cada pieza).
+            </p>
+          </div>
         </section>
 
         <section class="space-y-4 rounded-lg border border-ink/10 bg-white p-6">
