@@ -20,9 +20,33 @@ const selectedProduct = computed(() =>
   (products.value ?? []).find((p) => p.slug === form.productSlug),
 )
 
-function submit() {
-  // TODO: enviar a /api/pedidos (Supabase) más adelante.
-  router.push('/pedido/gracias')
+const submitting = ref(false)
+const errorMsg = ref('')
+
+async function submit() {
+  errorMsg.value = ''
+  submitting.value = true
+  try {
+    await $fetch('/api/order', {
+      method: 'POST',
+      body: {
+        productSlug: form.productSlug,
+        variant: form.variant,
+        name: form.name,
+        email: form.email,
+        notes: form.notes,
+      },
+    })
+    router.push('/pedido/gracias')
+  } catch (e: unknown) {
+    const err = e as { statusMessage?: string; data?: { statusMessage?: string } }
+    errorMsg.value =
+      err?.data?.statusMessage ||
+      err?.statusMessage ||
+      'No se pudo enviar la solicitud. Inténtalo de nuevo.'
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
@@ -107,10 +131,13 @@ function submit() {
 
         <button
           type="submit"
-          class="inline-block bg-ink px-8 py-4 text-sm uppercase tracking-widest2 text-bone transition-colors duration-300 ease-editorial hover:bg-accent"
+          :disabled="submitting"
+          class="inline-block bg-ink px-8 py-4 text-sm uppercase tracking-widest2 text-bone transition-colors duration-300 ease-editorial hover:bg-accent disabled:opacity-50"
         >
-          Enviar solicitud
+          {{ submitting ? 'Enviando…' : 'Enviar solicitud' }}
         </button>
+
+        <p v-if="errorMsg" class="text-sm text-red-700">{{ errorMsg }}</p>
       </form>
     </div>
   </div>

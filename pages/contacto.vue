@@ -17,10 +17,27 @@ const form = reactive({
 })
 
 const sent = ref(false)
+const submitting = ref(false)
+const errorMsg = ref('')
 
-function submit() {
-  // TODO: enviar a /api/contacto (Supabase) más adelante.
-  sent.value = true
+async function submit() {
+  errorMsg.value = ''
+  submitting.value = true
+  try {
+    await $fetch('/api/inquiry', {
+      method: 'POST',
+      body: { name: form.name, email: form.email, message: form.message },
+    })
+    sent.value = true
+  } catch (e: unknown) {
+    const err = e as { statusMessage?: string; data?: { statusMessage?: string } }
+    errorMsg.value =
+      err?.data?.statusMessage ||
+      err?.statusMessage ||
+      'No se pudo enviar el mensaje. Inténtalo de nuevo.'
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
@@ -85,10 +102,13 @@ function submit() {
           </div>
           <button
             type="submit"
-            class="inline-block bg-ink px-8 py-4 text-sm uppercase tracking-widest2 text-bone transition-colors duration-300 ease-editorial hover:bg-accent"
+            :disabled="submitting"
+            class="inline-block bg-ink px-8 py-4 text-sm uppercase tracking-widest2 text-bone transition-colors duration-300 ease-editorial hover:bg-accent disabled:opacity-50"
           >
-            Enviar mensaje
+            {{ submitting ? 'Enviando…' : 'Enviar mensaje' }}
           </button>
+
+          <p v-if="errorMsg" class="text-sm text-red-700">{{ errorMsg }}</p>
         </form>
 
         <div v-else class="border border-ink/10 p-8">

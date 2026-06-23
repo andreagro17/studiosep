@@ -8,9 +8,11 @@ y Zara Home Studio.
 La app tiene dos partes:
 
 - **Parte pública** (editorial): Home, Catálogo, Producto, Colecciones, Sobre nosotras,
-  Contacto y Formulario de pedido.
-- **Parte privada** (panel de administración, _pendiente de construir_): dashboard, gestión
-  de pedidos/productos/clientes/colecciones y subida de imágenes.
+  Contacto y Formulario de pedido. Los formularios de contacto y pedido **persisten en
+  Supabase** a través de rutas de servidor.
+- **Parte privada** (panel de administración, `/panel`, protegido con Supabase Auth):
+  dashboard, gestión de **productos** y **colecciones** (alta/edición + subida de fotos +
+  publicar/destacar/eliminar) y listados de pedidos y clientes.
 
 Los productos se dividen en dos categorías:
 
@@ -31,9 +33,10 @@ Los productos se dividen en dos categorías:
 | Imágenes | **@nuxt/image** | `^1.8.1` |
 | Fuentes | **@nuxtjs/google-fonts** (Fraunces + Inter) | `^3.2.0` |
 | Tipos | **TypeScript** (modo strict) + `vue-tsc` | `^5.6.3` |
-| Backend (previsto) | **Supabase** (Postgres + Auth + Storage) | _pendiente_ |
+| Backend | **Supabase** (Postgres + Auth + Storage) vía `@nuxtjs/supabase` | `^2.0.9` |
 
-Requisitos: **Node.js 20+** y npm.
+Requisitos: **Node.js 20+** y npm. Se necesita un archivo `.env` con las claves de
+Supabase (ver _Configuración de Supabase_).
 
 ---
 
@@ -66,17 +69,22 @@ npm run dev          # servidor de desarrollo en http://localhost:3000
 studiosep/
 ├─ app.vue                  # raíz: <NuxtLayout> + <NuxtPage>
 ├─ error.vue                # página de error
-├─ nuxt.config.ts           # configuración (módulos, fuentes, routeRules, components)
+├─ nuxt.config.ts           # configuración (módulos, supabase, fuentes, routeRules)
 ├─ tailwind.config.ts       # tokens de diseño (colores, tipografías, easing)
 ├─ assets/css/              # CSS global (clases utilitarias: container-editorial, eyebrow…)
 ├─ components/
 │  ├─ SiteHeader.vue        # cabecera / navegación
 │  ├─ SiteFooter.vue        # pie
 │  ├─ editorial/            # HeroSection, EditorialBlock (bloques de marketing)
-│  └─ product/              # ProductCard (distingue bajo pedido / colección)
+│  ├─ product/              # ProductCard (distingue bajo pedido / colección)
+│  └─ panel/                # ProductForm, CollectionForm (formularios de administración)
+├─ composables/
+│  ├─ useCatalog.ts         # CONSULTAS públicas a Supabase (productos, colecciones)
+│  ├─ useProductAdmin.ts    # ESCRITURA de productos (CRUD, variantes, dimensiones, fotos)
+│  └─ useCollectionAdmin.ts # ESCRITURA de colecciones (CRUD + portada)
 ├─ layouts/
 │  ├─ default.vue           # layout público (editorial)
-│  └─ studio.vue            # layout del panel privado (pendiente de uso)
+│  └─ studio.vue            # layout del panel privado (sidebar + sesión)
 ├─ pages/                   # rutas (file-based routing)
 │  ├─ index.vue             # /            Home
 │  ├─ catalogo/index.vue    # /catalogo    Catálogo (toggle bajo pedido / stock)
@@ -84,11 +92,26 @@ studiosep/
 │  ├─ colecciones/index.vue # /colecciones
 │  ├─ colecciones/[slug].vue
 │  ├─ sobre-nosotras.vue    # /sobre-nosotras
-│  ├─ contacto.vue          # /contacto
-│  ├─ pedido/index.vue      # /pedido      Formulario de solicitud
-│  └─ pedido/gracias.vue    # /pedido/gracias
+│  ├─ contacto.vue          # /contacto   (envía a /api/inquiry)
+│  ├─ pedido/index.vue      # /pedido      Formulario de solicitud (envía a /api/order)
+│  ├─ pedido/gracias.vue    # /pedido/gracias
+│  └─ panel/                # PANEL PRIVADO (protegido con Supabase Auth)
+│     ├─ login.vue          # /panel/login
+│     ├─ confirm.vue        # /panel/confirm   (callback de auth)
+│     ├─ index.vue          # /panel           dashboard
+│     ├─ pedidos.vue        # /panel/pedidos   (lista)
+│     ├─ clientes.vue       # /panel/clientes  (lista)
+│     ├─ ajustes.vue        # /panel/ajustes
+│     ├─ productos/         # index · nuevo · [id]  (CRUD + fotos)
+│     └─ colecciones/       # index · nuevo · [id]  (CRUD + portada)
+├─ server/api/
+│  ├─ inquiry.post.ts       # alta pública del formulario de contacto (service_role)
+│  └─ order.post.ts         # alta pública del formulario de pedido (service_role)
+├─ supabase/
+│  ├─ schema.sql            # tablas + RLS + bucket de Storage
+│  └─ seed.sql              # datos de ejemplo (colección + 4 productos)
 ├─ lib/
-│  ├─ data.ts               # DATOS DE EJEMPLO (mock). Se sustituirá por Supabase
+│  ├─ data.ts               # datos mock (legado; las páginas ya usan Supabase)
 │  └─ format.ts             # utilidades (formato de precio, tiempo de producción)
 ├─ types/index.ts           # tipos de dominio (Product, Collection, estados, variantes)
 └─ public/                  # estáticos (favicon, imágenes propias)
@@ -101,8 +124,11 @@ studiosep/
 - **`googleFonts: { download: false }`** → no descarga las fuentes en build (la red
   corporativa con proxy TLS lo bloqueaba). Se cargan por `<link>` y, si fallan, caen al
   stack de respaldo definido en Tailwind (Georgia/serif, system-ui).
-- **`routeRules`** → render híbrido: home/sobre-nosotras prerenderizadas, catálogo/
-  colecciones con SWR, y `/panel/**` siempre SSR sin cache.
+- **`supabase.redirectOptions`** → protege **solo** `/panel/**`; el resto del sitio es
+  público. Redirige a `/panel/login` si no hay sesión (excepto `login` y `confirm`).
+- **`routeRules`** → render híbrido: `/` y páginas casi estáticas con SWR; **catálogo y
+  colecciones en SSR fresco** (sin SWR) para que las ediciones del panel aparezcan al
+  instante; `/panel/**` siempre SSR sin indexar.
 
 ---
 
@@ -114,27 +140,30 @@ studiosep/
 flowchart TB
   subgraph Cliente["Navegador (cliente)"]
     UI["Parte publica - Vue 3 + Tailwind"]
-    Panel["Panel privado (previsto)"]
+    Panel["Panel privado - /panel (Supabase Auth)"]
   end
 
   subgraph Nuxt["Nuxt 3 (Vite + Nitro)"]
     Pages["pages/ - file-based routing"]
-    Comps["components/ - auto-import"]
-    ServerApi["server/api (previsto) - Zod"]
+    Comps["composables/ - useCatalog / *Admin"]
+    ServerApi["server/api - inquiry / order (service_role)"]
   end
 
-  subgraph Datos["Datos"]
-    Mock["lib/data.ts - mock (actual)"]
-    Supabase[("Supabase - Postgres + Auth + Storage (previsto)")]
+  subgraph Datos["Supabase"]
+    DB[("Postgres + RLS")]
+    Auth["Auth"]
+    Storage["Storage - bucket products"]
   end
 
   UI --> Pages
-  Panel -.previsto.-> Pages
+  Panel --> Pages
   Pages --> Comps
-  Pages --> Mock
-  Pages -.futuro.-> ServerApi
-  ServerApi -.futuro.-> Supabase
-  Mock -.se sustituye por.-> Supabase
+  Comps -->|lectura publicada| DB
+  Comps -->|escritura admin| DB
+  Comps --> Storage
+  Pages -->|formularios| ServerApi
+  ServerApi -->|service_role| DB
+  Panel --> Auth
   Nuxt -->|build| Vercel["Vercel - hosting + CI/CD"]
 ```
 
@@ -267,20 +296,67 @@ La columna `product_images.storage_path` admite **dos formatos** y `resolveImage
 
 Por eso conviven datos de demo y fotos reales sin tocar código.
 
-### Estado actual del panel (importante)
+### El panel de administración (`/panel`)
 
-Las páginas del panel (`pages/panel/*`) son de **solo lectura**: listan productos,
-colecciones, pedidos y clientes, pero **todavía no incluyen formularios de alta/edición ni
-subida de fotos**. Hasta construir esos formularios hay dos vías para cargar contenido:
+Protegido con **Supabase Auth** (email + contraseña). Layout propio con barra lateral
+([`layouts/studio.vue`](./layouts/studio.vue)). Secciones:
 
-| Vía | ¿Disponible ya? | Comodidad |
+| Sección | Ruta | Estado |
 |---|---|---|
-| **Dashboard de Supabase** (Table Editor + Storage) | ✅ Sí | Técnica, poco amigable |
-| **Panel propio con formularios + subida de fotos** | ❌ Pendiente | Lo ideal para el equipo |
+| Dashboard (métricas + pedidos recientes) | `/panel` | ✅ |
+| **Productos** (alta/edición, fotos, variantes, dimensiones, publicar/destacar/eliminar) | `/panel/productos` | ✅ CRUD completo |
+| **Colecciones** (alta/edición, portada, aviso de visibilidad) | `/panel/colecciones` | ✅ CRUD completo |
+| Pedidos | `/panel/pedidos` | 🟡 solo lista (sin cambio de estado) |
+| Clientes | `/panel/clientes` | 🟡 solo lista |
+| Ajustes | `/panel/ajustes` | ✅ sesión / info |
 
-Para que el panel sea plenamente usable falta añadir (ver _Roadmap_): formularios de
-alta/edición de producto y colección, **subida de imágenes** al bucket con
-`supabase.storage.from('products').upload(...)`, y botones de **publicar/despublicar/eliminar**.
+**Flujo de fotos**: al crear una pieza se guarda primero (para obtener su `id`) y luego se
+habilita la subida de imágenes al bucket. La escritura vive en
+[`useProductAdmin.ts`](./composables/useProductAdmin.ts) y
+[`useCollectionAdmin.ts`](./composables/useCollectionAdmin.ts).
+
+**Visibilidad de una colección en la web**: debe estar **publicada** Y tener **≥ 1 producto
+publicado** asignado. El formulario de colección avisa de los requisitos que falten.
+
+### Formularios públicos (contacto y pedido)
+
+Las tablas `inquiries`, `orders` y `customers` **no permiten escritura pública** por RLS.
+Las altas desde la web pasan por **rutas de servidor** que usan la `service_role` key
+(omite RLS) y validan la entrada:
+
+| Formulario | Página | Endpoint | Qué hace |
+|---|---|---|---|
+| Contacto | `/contacto` | [`/api/inquiry`](./server/api/inquiry.post.ts) | inserta en `inquiries` |
+| Pedido | `/pedido` | [`/api/order`](./server/api/order.post.ts) | crea/reutiliza `customer`, crea `order` + `order_item` |
+
+El precio y el tipo de pedido se leen de la BD (nunca se confía en el cliente). Una
+solicitud aparece luego en el panel (Pedidos / Clientes / contador de Consultas).
+
+> En la **red corporativa** los formularios y el SSR no funcionan en local (el proxy TLS
+> bloquea las llamadas del servidor a Supabase); en **Vercel** sí.
+
+---
+
+## Configuración de Supabase
+
+1. Crea un proyecto en [supabase.com](https://supabase.com) y copia las claves.
+2. Crea un archivo `.env` en la raíz (no se sube a git):
+
+   ```env
+   SUPABASE_URL=https://<tu-ref>.supabase.co
+   SUPABASE_KEY=<anon / publishable key>
+   SUPABASE_SERVICE_KEY=<service_role / secret key>
+   ```
+
+3. En el **SQL Editor** de Supabase ejecuta, en este orden:
+   - [`supabase/schema.sql`](./supabase/schema.sql) → tablas, RLS y bucket `products`.
+   - [`supabase/seed.sql`](./supabase/seed.sql) → datos de ejemplo (opcional).
+4. **Auth** → crea el usuario administrador (email + contraseña) y, para producción,
+   añade el dominio de Vercel en _Auth → URL Configuration_.
+5. Verifica que el bucket `products` es **público** (lectura).
+
+> ⚠ **La `service_role` key es secreta**: solo en `.env` y en las variables de entorno de
+> Vercel. Nunca en el código ni en el repositorio. Si se expone, rótala en Supabase.
 
 ---
 
@@ -301,9 +377,13 @@ Definidos en [`tailwind.config.ts`](./tailwind.config.ts):
 El proyecto se despliega en **Vercel** (detecta Nuxt automáticamente):
 
 1. Importar el repo `andreagro17/studiosep` en https://vercel.com.
-2. Vercel usa `npm run build` y sirve `.output/` sin configuración extra.
-3. La web de producción se publica desde la rama por defecto (`main`); cada push
-   redespliega automáticamente.
+2. **Variables de entorno** (Settings → Environment Variables, para Production):
+   `SUPABASE_URL`, `SUPABASE_KEY` y `SUPABASE_SERVICE_KEY`. Sin la `service_role` los
+   formularios públicos fallan.
+3. Vercel usa `npm run build` y sirve `.output/` sin configuración extra.
+4. La web de producción se publica desde la rama por defecto; cada push redespliega.
+5. En Supabase, añade el dominio de Vercel en _Auth → URL Configuration_ para que el
+   login del panel funcione en producción.
 
 > El aviso `sharp binaries for win32-x64 cannot be found` en build local es **inofensivo**:
 > en Vercel (Linux) `sharp` se instala correctamente.
@@ -312,13 +392,22 @@ El proyecto se despliega en **Vercel** (detecta Nuxt automáticamente):
 
 ## Roadmap (siguientes pasos)
 
-- [ ] Conectar **Supabase**: esquema SQL, RLS, Storage y generación de tipos.
-- [ ] **Panel privado** con autenticación: dashboard, pedidos (cambio de estados),
-      productos (CRUD + variantes + destacar/ocultar), clientes, colecciones y subida de fotos.
-- [ ] Sustituir `lib/data.ts` por consultas reales a Supabase.
-- [ ] Server routes (`server/api`) para solicitudes de pedido y contacto, validadas con Zod.
-- [ ] Componentes pendientes: `VariantSelector`, `ProductGallery`, `OrderRequestForm`.
+Hecho:
+
+- [x] Conectar **Supabase**: esquema SQL, RLS, Storage y capa de consultas/escritura.
+- [x] **Panel privado** con Supabase Auth: dashboard, productos (CRUD + variantes +
+      dimensiones + fotos + destacar/publicar), colecciones (CRUD + portada).
+- [x] Páginas públicas servidas desde Supabase (sustituido `lib/data.ts`).
+- [x] Server routes (`server/api`) para pedido y contacto con `service_role`.
+
+Pendiente:
+
+- [ ] **Pedidos en el panel**: detalle y **cambio de estado de producción** (las 10 fases).
+- [ ] **Clientes**: ficha e historial de pedidos.
+- [ ] Validación con **Zod** en los `server/api` y notificación por email de nuevas altas.
+- [ ] Componentes de producto: `VariantSelector`, `ProductGallery`.
 - [ ] Pulido: animaciones de scroll, accesibilidad (AA), SEO/OG, auto-alojado de fuentes.
+- [ ] Retirar `lib/data.ts` (legado) cuando ya no sirva de referencia.
 
 ---
 
