@@ -33,9 +33,17 @@ const availabilityLabel = (a: AvailabilityType) =>
 
 <template>
   <div>
-    <header class="mb-8">
-      <p class="eyebrow">Catálogo</p>
-      <h1 class="mt-1 font-serif text-3xl tracking-tight text-ink">Productos</h1>
+    <header class="mb-8 flex items-end justify-between gap-4">
+      <div>
+        <p class="eyebrow">Catálogo</p>
+        <h1 class="mt-1 font-serif text-3xl tracking-tight text-ink">Productos</h1>
+      </div>
+      <NuxtLink
+        to="/panel/productos/nuevo"
+        class="rounded-md bg-ink px-4 py-2 text-sm text-bone transition-colors hover:bg-accent"
+      >
+        Nueva pieza
+      </NuxtLink>
     </header>
 
     <p v-if="error" class="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -58,13 +66,17 @@ const availabilityLabel = (a: AvailabilityType) =>
             <td colspan="5" class="px-5 py-8 text-center text-engobe">Cargando…</td>
           </tr>
           <tr v-else-if="!products?.length">
-            <td colspan="5" class="px-5 py-8 text-center text-engobe">Aún no hay productos.</td>
+            <td colspan="5" class="px-5 py-8 text-center text-engobe">
+              Aún no hay productos.
+              <NuxtLink to="/panel/productos/nuevo" class="text-accent underline">Crea el primero</NuxtLink>.
+            </td>
           </tr>
           <tr
             v-for="p in products"
             v-else
             :key="p.id"
-            class="border-b border-ink/5 last:border-0 transition-colors hover:bg-stone/20"
+            class="cursor-pointer border-b border-ink/5 last:border-0 transition-colors hover:bg-stone/20"
+            @click="navigateTo(`/panel/productos/${p.id}`)"
           >
             <td class="px-5 py-3 font-medium text-ink">
               {{ p.name }}
