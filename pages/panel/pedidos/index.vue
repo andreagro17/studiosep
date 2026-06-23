@@ -50,8 +50,8 @@ const formatDate = (iso: string | null) =>
       No se pudieron cargar los pedidos.
     </p>
 
-    <div v-else class="overflow-hidden rounded-lg border border-ink/10 bg-white">
-      <table class="w-full text-left text-sm">
+    <div v-else class="overflow-x-auto rounded-lg border border-ink/10 bg-white">
+      <table class="w-full min-w-[640px] text-left text-sm">
         <thead class="border-b border-ink/10 text-xs uppercase tracking-widest2 text-engobe">
           <tr>
             <th class="px-5 py-3 font-medium">Pedido</th>
@@ -74,7 +74,8 @@ const formatDate = (iso: string | null) =>
             v-for="order in orders"
             v-else
             :key="order.id"
-            class="border-b border-ink/5 last:border-0 transition-colors hover:bg-stone/20"
+            class="cursor-pointer border-b border-ink/5 last:border-0 transition-colors hover:bg-stone/20"
+            @click="navigateTo(`/panel/pedidos/${order.id}`)"
           >
             <td class="px-5 py-3 font-medium text-ink">{{ order.order_number }}</td>
             <td class="px-5 py-3 text-engobe">{{ order.customer?.full_name ?? '—' }}</td>

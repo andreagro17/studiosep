@@ -21,8 +21,7 @@ exception when duplicate_object then null; end $$;
 
 do $$ begin
   create type production_status as enum (
-    'pendiente', 'aceptado', 'modelando', 'secando', 'primera_coccion',
-    'esmaltado', 'segunda_coccion', 'preparando_envio', 'enviado', 'entregado'
+    'pendiente', 'aceptado', 'en_produccion', 'enviado', 'entregado', 'cancelado'
   );
 exception when duplicate_object then null; end $$;
 

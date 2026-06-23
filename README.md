@@ -218,21 +218,19 @@ erDiagram
   }
 ```
 
-### Flujo de un pedido (estados de produccion)
+### Flujo de un pedido (estados)
 
 ```mermaid
 stateDiagram-v2
   [*] --> pendiente
   pendiente --> aceptado
-  aceptado --> modelando
-  modelando --> secando
-  secando --> primera_coccion
-  primera_coccion --> esmaltado
-  esmaltado --> segunda_coccion
-  segunda_coccion --> preparando_envio
-  preparando_envio --> enviado
+  aceptado --> en_produccion
+  en_produccion --> enviado
   enviado --> entregado
   entregado --> [*]
+  pendiente --> cancelado
+  aceptado --> cancelado
+  cancelado --> [*]
 ```
 
 ---
@@ -248,11 +246,11 @@ Definido en [`types/index.ts`](./types/index.ts). Entidades principales:
   `stockQuantity`.
 - **`Collection`**: `slug`, `title`, `month`, `coverImage`, `isPublished`.
 
-**Estados de producción de un pedido** (`ProductionStatus`, 10 fases artesanales):
+**Estados de un pedido** (`ProductionStatus`):
 
 ```
-pendiente → aceptado → modelando → secando → primera_coccion
-→ esmaltado → segunda_coccion → preparando_envio → enviado → entregado
+pendiente → aceptado → en_produccion → enviado → entregado
+(cancelado como estado final aparte)
 ```
 
 > Los precios se guardan en **céntimos** (`priceCents`). 95 € = `9500`.
