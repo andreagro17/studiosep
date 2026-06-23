@@ -89,8 +89,40 @@ const formatDate = (iso: string) =>
           </NuxtLink>
         </div>
 
-        <div class="overflow-x-auto rounded-lg border border-ink/10 bg-white">
-          <table class="w-full min-w-[640px] text-left text-sm">
+        <!-- Móvil: tarjetas -->
+        <div class="space-y-3 sm:hidden">
+          <p v-if="pending" class="rounded-lg border border-ink/10 bg-white px-5 py-8 text-center text-engobe">
+            Cargando…
+          </p>
+          <p
+            v-else-if="!data?.recentOrders.length"
+            class="rounded-lg border border-ink/10 bg-white px-5 py-8 text-center text-engobe"
+          >
+            Aún no hay pedidos.
+          </p>
+          <NuxtLink
+            v-for="order in data?.recentOrders"
+            v-else
+            :key="order.id"
+            :to="`/panel/pedidos/${order.id}`"
+            class="block rounded-lg border border-ink/10 bg-white p-4 transition-colors hover:bg-stone/20"
+          >
+            <div class="flex items-center justify-between gap-3">
+              <span class="font-medium text-ink">{{ order.order_number }}</span>
+              <span class="inline-block rounded-full bg-stone/50 px-2.5 py-0.5 text-xs text-ink">
+                {{ statusLabel(order.status) }}
+              </span>
+            </div>
+            <div class="mt-2 flex items-center justify-between gap-3 text-sm text-engobe">
+              <span>{{ order.customer?.full_name ?? '—' }}</span>
+              <span>{{ formatDate(order.requested_at) }}</span>
+            </div>
+          </NuxtLink>
+        </div>
+
+        <!-- Escritorio: tabla -->
+        <div class="hidden rounded-lg border border-ink/10 bg-white sm:block">
+          <table class="w-full text-left text-sm">
             <thead class="border-b border-ink/10 text-xs uppercase tracking-widest2 text-engobe">
               <tr>
                 <th class="px-5 py-3 font-medium">Pedido</th>
@@ -112,7 +144,8 @@ const formatDate = (iso: string) =>
                 v-for="order in data?.recentOrders"
                 v-else
                 :key="order.id"
-                class="border-b border-ink/5 last:border-0 transition-colors hover:bg-stone/20"
+                class="cursor-pointer border-b border-ink/5 last:border-0 transition-colors hover:bg-stone/20"
+                @click="navigateTo(`/panel/pedidos/${order.id}`)"
               >
                 <td class="px-5 py-3 font-medium text-ink">{{ order.order_number }}</td>
                 <td class="px-5 py-3 text-engobe">{{ order.customer?.full_name ?? '—' }}</td>
