@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // Capa de ESCRITURA para colecciones (panel privado).
 // Requiere usuario autenticado (RLS: insert/update/delete para `authenticated`).
-// La imagen de portada se sube al bucket público 'products' bajo 'collections/'.
+// La imagen de portada se sube al bucket público 'products' bajo 'colecciones/'.
 // ----------------------------------------------------------------------------
 
 export interface AdminCollectionForm {
@@ -97,7 +97,7 @@ export function useCollectionAdmin() {
   async function uploadCover(slug: string, file: File): Promise<string> {
     const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
     const base = slug || Date.now().toString()
-    const path = `collections/${base}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+    const path = `colecciones/${base}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
     const { error } = await supabase.storage
       .from('products')

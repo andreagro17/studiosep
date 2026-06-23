@@ -122,14 +122,18 @@ function mapProduct(supabase: ReturnType<typeof useSupabaseClient>, row: DbProdu
   }
 }
 
-function mapCollection(row: DbCollection, productCount: number): Collection {
+function mapCollection(
+  supabase: ReturnType<typeof useSupabaseClient>,
+  row: DbCollection,
+  productCount: number,
+): Collection {
   return {
     id: row.id,
     slug: row.slug,
     title: row.title,
     month: row.month ?? '',
     description: row.description ?? '',
-    coverImage: row.cover_image ?? '',
+    coverImage: row.cover_image ? resolveImageUrl(supabase, row.cover_image) : '',
     productCount,
     isPublished: row.is_published,
   }
@@ -190,7 +194,7 @@ export function useCollections() {
     }
 
     return (cols.data as DbCollection[])
-      .map((c) => mapCollection(c, counts.get(c.id) ?? 0))
+      .map((c) => mapCollection(supabase, c, counts.get(c.id) ?? 0))
       .filter((c) => c.productCount > 0)
   })
 }
@@ -221,7 +225,7 @@ export function useCollection(slug: MaybeRefOrGetter<string>) {
 
       const pieces = (prods as unknown as DbProduct[]).map((row) => mapProduct(supabase, row))
       return {
-        collection: mapCollection(col as DbCollection, pieces.length),
+        collection: mapCollection(supabase, col as DbCollection, pieces.length),
         pieces,
       }
     },
